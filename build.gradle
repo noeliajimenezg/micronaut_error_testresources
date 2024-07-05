@@ -1,8 +1,8 @@
 plugins {
     id("com.github.johnrengelman.shadow") version "8.1.1"
-    id("io.micronaut.application") version "4.3.4"
-    id("io.micronaut.test-resources") version "4.3.4"
-    id("io.micronaut.aot") version "4.3.4"
+    id("io.micronaut.application") version "4.4.0"
+    id("io.micronaut.test-resources") version "4.4.0"
+    id("io.micronaut.aot") version "4.4.0"
 }
 
 version = "0.1"
@@ -24,12 +24,12 @@ dependencies {
     runtimeOnly("ch.qos.logback:logback-classic")
     runtimeOnly("com.oracle.database.jdbc:ojdbc11")
     testImplementation("io.micronaut:micronaut-http-client")
-    testImplementation("io.micronaut.testresources:micronaut-test-resources-extensions-core:2.4.0")
-    testImplementation 'io.micronaut.testresources:micronaut-test-resources-extensions-junit-platform:2.4.0'
-    testResourcesImplementation("io.micronaut.testresources:micronaut-test-resources-core:2.4.0")
-    testResourcesImplementation("io.micronaut.testresources:micronaut-test-resources-server:2.4.0")
-    testResourcesService("io.micronaut.testresources:micronaut-test-resources-jdbc-oracle-free:2.4.0")
-    testRuntimeOnly("io.micronaut.testresources:micronaut-test-resources-client:2.4.0")
+    testImplementation("io.micronaut.testresources:micronaut-test-resources-extensions-core:2.5.2")
+    testImplementation 'io.micronaut.testresources:micronaut-test-resources-extensions-junit-platform:2.5.2'
+    testResourcesImplementation("io.micronaut.testresources:micronaut-test-resources-core:2.5.2")
+    testResourcesImplementation("io.micronaut.testresources:micronaut-test-resources-server:2.5.2")
+    testResourcesService("io.micronaut.testresources:micronaut-test-resources-jdbc-oracle-free:2.5.2")
+    testRuntimeOnly("io.micronaut.testresources:micronaut-test-resources-client:2.5.2")
 }
 
 
@@ -50,9 +50,6 @@ micronaut {
         incremental(true)
         annotations("com.example.*")
     }
-    testResources {
-        additionalModules.add("jdbc-oracle-free")
-    }
     aot {
     // Please review carefully the optimizations enabled below
     // Check https://micronaut-projects.github.io/micronaut-aot/latest/guide/ for more details
@@ -64,6 +61,10 @@ micronaut {
         deduceEnvironment = true
         optimizeNetty = true
     }
+    testResources {
+        enabled = project.hasProperty('micronaut.testResources') ? Boolean.parseBoolean(project.property("micronaut.testResources") as String) : false
+        clientTimeout = 500 //to avoid timeouts first time pulling oracle image
+    }
 }
 
 tasks.named("dockerfile") {
@@ -73,5 +74,3 @@ tasks.named("dockerfile") {
 tasks.named("dockerfileNative") {
     jdkVersion = "21"
 }
-
-
