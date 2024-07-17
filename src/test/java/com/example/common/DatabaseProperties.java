@@ -18,7 +18,7 @@ public class DatabaseProperties {
                             Objects.requireNonNull(
                                             DatabaseProperties.class
                                                     .getClassLoader()
-                                                    .getResource("UnitTestNew.properties"))
+                                                    .getResource("config/UnitTestNew.properties"))
                                     .toURI());
             Charset charset = StandardCharsets.UTF_8;
             String content;

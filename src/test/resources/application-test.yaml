@@ -1,0 +1,14 @@
+test-resources.containers.oracle.db-name=MYDB
+test-resources.containers.oracle.username=micronaut
+test-resources.containers.oracle.password=micronaut
+test-resources.containers.oracle.startup-timeout=300s
+datasources.default.db-name=MYDB
+datasources.default.db-type=oracle
+flyway.datasources.default.enabled=true
+flyway.datasources.default.locations[0]=classpath:db-test
+flyway.datasources.default.placeholder-replacement=false
+flyway.datasources.default.create-schemas=false
+flyway.datasources.default.schemas=MYDB
+flyway.datasources.default.default-schema=MYDB
+flyway.datasources.default.encoding=UTF-8
+app.config=config/IntegrationTest.properties

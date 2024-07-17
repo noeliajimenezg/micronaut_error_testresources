@@ -2,7 +2,6 @@ plugins {
     id("com.github.johnrengelman.shadow") version "8.1.1"
     id("io.micronaut.application") version "4.4.0"
     id("io.micronaut.test-resources") version "4.4.0"
-    id("io.micronaut.aot") version "4.4.0"
 }
 
 version = "0.1"
@@ -15,21 +14,36 @@ repositories {
     mavenCentral()
 }
 
+configurations.configureEach {
+    resolutionStrategy.eachDependency { details ->
+        if (details.requested.group == 'io.micronaut.testresources') {
+            details.useVersion "2.5.3"
+        }
+    }
+}
+
 dependencies {
     annotationProcessor("io.micronaut:micronaut-http-validation")
     annotationProcessor("io.micronaut.serde:micronaut-serde-processor")
     implementation("io.micronaut.serde:micronaut-serde-jackson")
-    implementation("io.micronaut.sql:micronaut-jdbc-hikari")
     compileOnly("io.micronaut:micronaut-http-client")
     runtimeOnly("ch.qos.logback:logback-classic")
-    runtimeOnly("com.oracle.database.jdbc:ojdbc11")
     testImplementation("io.micronaut:micronaut-http-client")
-    testImplementation("io.micronaut.testresources:micronaut-test-resources-extensions-core:2.5.2")
-    testImplementation 'io.micronaut.testresources:micronaut-test-resources-extensions-junit-platform:2.5.2'
-    testResourcesImplementation("io.micronaut.testresources:micronaut-test-resources-core:2.5.2")
-    testResourcesImplementation("io.micronaut.testresources:micronaut-test-resources-server:2.5.2")
-    testResourcesService("io.micronaut.testresources:micronaut-test-resources-jdbc-oracle-free:2.5.2")
-    testRuntimeOnly("io.micronaut.testresources:micronaut-test-resources-client:2.5.2")
+    testImplementation("io.micronaut.testresources:micronaut-test-resources-extensions-core")
+//    manual addition of test-resources
+    testImplementation("io.micronaut.testresources:micronaut-test-resources-extensions-junit-platform")
+    testImplementation("io.micronaut.testresources:micronaut-test-resources-core")
+    testResourcesCompileOnly("io.micronaut.testresources:micronaut-test-resources-server")
+    testResourcesClient("io.micronaut.testresources:micronaut-test-resources-client")
+    testResourcesService("io.micronaut.testresources:micronaut-test-resources-jdbc-oracle-free")
+
+//  jdbc dependencies: in our case the real connection is made by a custom jdbc library
+//  micronaut-data-jdbc triggers the addition of jdbc-oracle-free, only in runtimeOnly
+//    runtimeOnly 'io.micronaut.data:micronaut-data-jdbc:4.8.3'
+    testRuntimeOnly('io.micronaut.sql:micronaut-jdbc-hikari')
+    testRuntimeOnly("com.oracle.database.jdbc:ojdbc11")
+    testRuntimeOnly("org.flywaydb:flyway-database-oracle")
+    testImplementation("io.micronaut.flyway:micronaut-flyway")
 }
 
 
@@ -50,21 +64,21 @@ micronaut {
         incremental(true)
         annotations("com.example.*")
     }
-    aot {
-    // Please review carefully the optimizations enabled below
-    // Check https://micronaut-projects.github.io/micronaut-aot/latest/guide/ for more details
-        optimizeServiceLoading = false
-        convertYamlToJava = false
-        precomputeOperations = true
-        cacheEnvironment = true
-        optimizeClassLoading = true
-        deduceEnvironment = true
-        optimizeNetty = true
-    }
     testResources {
-        enabled = project.hasProperty('micronaut.testResources') ? Boolean.parseBoolean(project.property("micronaut.testResources") as String) : false
+        version = "2.5.3"
+        enabled = project.hasProperty("micronaut.testResources") ? Boolean.parseBoolean(project.property("micronaut.testResources") as String) : false
         clientTimeout = 500 //to avoid timeouts first time pulling oracle image
+//        additionalModules.add('jdbc-oracle-free') //this triggers the database if micronaut-data is in runtime classpath not test runtime classpath
     }
+}
+
+test {
+    systemProperty 'micronaut.env.deduction', 'false'
+    if (Boolean.parseBoolean(project.property("micronaut.testResources") as String)){
+        systemProperty 'micronaut.environments', 'test'
+    }
+    systemProperty 'micronaut.test.resources.enabled', project.property("micronaut.testResources")
+    useJUnitPlatform()
 }
 
 tasks.named("dockerfile") {

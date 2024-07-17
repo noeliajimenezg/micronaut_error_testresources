@@ -1,40 +1,29 @@
 package com.example;
 
-import io.micronaut.core.annotation.ReflectiveAccess;
+import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.runtime.EmbeddedApplication;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import io.micronaut.test.extensions.testresources.TestResourcesPropertyProvider;
 import io.micronaut.test.extensions.testresources.annotation.TestResourcesProperties;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
 
 import jakarta.inject.Inject;
+import org.junit.jupiter.api.TestInstance;
 
-import java.util.Map;
-
-import static com.example.common.DatabaseProperties.updateContentPropertyFile;
-
-@MicronautTest
+@Requires(property = "micronaut.test.resources.enabled", value = "true")
+@MicronautTest(environments = "test")
 @TestResourcesProperties(
-        value = "datasources.default.url",
-        //    value = "auto.test.resources.datasources.default.url",
-        providers = DemoTest.DatabasePropertiesProvider.class)
-class DemoTest {
+        value = {
+                "datasources.default.url",
+                "datasources.default.username",
+                "datasources.default.password"
+        })
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+public class DemoTest {
 
-    @ReflectiveAccess
-    public static class DatabasePropertiesProvider implements TestResourcesPropertyProvider {
-        @Override
-        public Map<String, String> provide(Map<String, Object> testProperties) {
-            testProperties.forEach((k, v) -> System.out.println("Value of map: " + k + " " + v));
-            String str = (String) testProperties.get("datasources.default.url");
-            System.out.println(
-                            (String) testProperties.get("datasources.default.url")
-                            + " "
-                            + (String) testProperties.get("auto.test.resources.datasources.default.url"));
-            updateContentPropertyFile(str);
-            return Map.of();
-        }
-    }
+    @Value("${datasources.default.url}")
+    String jdbcUrl;
 
     @Inject
     EmbeddedApplication<?> application;
@@ -42,6 +31,7 @@ class DemoTest {
     @Test
     void testItWorks() {
         Assertions.assertTrue(application.isRunning());
+        System.out.println("jdbcUrl: " + jdbcUrl);
     }
 
 }
