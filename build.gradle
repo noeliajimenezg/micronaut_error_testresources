@@ -8,9 +8,6 @@ version = "0.1"
 group = "com.example"
 
 repositories {
-    maven { url "https://s01.oss.sonatype.org/content/repositories/snapshots/"
-        mavenContent { snapshotsOnly() }
-    }
     mavenCentral()
 }
 
@@ -30,12 +27,8 @@ dependencies {
     runtimeOnly("ch.qos.logback:logback-classic")
     testImplementation("io.micronaut:micronaut-http-client")
     testImplementation("io.micronaut.testresources:micronaut-test-resources-extensions-core")
-//    manual addition of test-resources
     testImplementation("io.micronaut.testresources:micronaut-test-resources-extensions-junit-platform")
-    testImplementation("io.micronaut.testresources:micronaut-test-resources-core")
-    testResourcesCompileOnly("io.micronaut.testresources:micronaut-test-resources-server")
-    testResourcesClient("io.micronaut.testresources:micronaut-test-resources-client")
-    testResourcesService("io.micronaut.testresources:micronaut-test-resources-jdbc-oracle-free")
+
 
 //  jdbc dependencies: in our case the real connection is made by a custom jdbc library
 //  micronaut-data-jdbc triggers the addition of jdbc-oracle-free, only in runtimeOnly
@@ -57,6 +50,7 @@ java {
 
 
 graalvmNative.toolchainDetection = false
+def testResourcesEnabled = providers.gradleProperty("micronaut.testResources").map(Boolean::parseBoolean).orElse(false)
 micronaut {
     runtime("netty")
     testRuntime("junit5")
@@ -66,18 +60,18 @@ micronaut {
     }
     testResources {
         version = "2.5.3"
-        enabled = project.hasProperty("micronaut.testResources") ? Boolean.parseBoolean(project.property("micronaut.testResources") as String) : false
+        enabled = testResourcesEnabled
         clientTimeout = 500 //to avoid timeouts first time pulling oracle image
-//        additionalModules.add('jdbc-oracle-free') //this triggers the database if micronaut-data is in runtime classpath not test runtime classpath
+        additionalModules.add('jdbc-oracle-free') //this triggers the database if micronaut-data is in runtime classpath not test runtime classpath
     }
 }
 
 test {
     systemProperty 'micronaut.env.deduction', 'false'
-    if (Boolean.parseBoolean(project.property("micronaut.testResources") as String)){
+    if (testResourcesEnabled.get()){
         systemProperty 'micronaut.environments', 'test'
     }
-    systemProperty 'micronaut.test.resources.enabled', project.property("micronaut.testResources")
+    systemProperty 'micronaut.test.resources.enabled', testResourcesEnabled.get()
     useJUnitPlatform()
 }
 
